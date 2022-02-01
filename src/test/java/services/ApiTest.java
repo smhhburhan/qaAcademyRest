@@ -92,6 +92,8 @@ public class ApiTest<baseURL> {
                 .body(UpdateBookingBody.updatingBody())
                 .when()
                 .put("/booking/"+bookingId);
+
+        System.out.println(response);
     }
 
     @Test
@@ -105,6 +107,8 @@ public class ApiTest<baseURL> {
                 .body(PartialUpdateBookingBody.partiallyUpdatingBody())
                 .when()
                 .put("/booking/"+bookingId);
+
+        System.out.println(response);
     }
 
     @DataProvider(name = "dataProvider")
@@ -146,6 +150,8 @@ public class ApiTest<baseURL> {
                 .body(PostTokenBody.tokenBody())
                 .when()
                 .delete("/booking/"+bookingId);
+
+        System.out.println(response);
     }
 
     @Test
