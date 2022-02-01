@@ -7,6 +7,9 @@ import body.UpdateBookingBody;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.given;
@@ -17,9 +20,24 @@ public class ApiTest {
     static String tokenId;
     static String bookingId;
 
+    @BeforeClass
+    @Test
+    public static void createToken () {
+        Response response = given()
+                .header("Content-Type", "application/json")
+                .baseUri(baseURI)
+                .log()
+                .all()
+                .body(PostTokenBody.tokenBody())
+                .when()
+                .post("/auth");
+
+        tokenId = response.jsonPath().getString("token");
+    }
+
     @Test
     public void getAllBookings () {
-        String response=given()
+        String response = given()
                 .header("Content-Type","application/json")
                 .baseUri(baseURI)
                 .log()
@@ -48,20 +66,6 @@ public class ApiTest {
     }
 
     @Test
-    public static void createToken () {
-        Response response = given()
-                .header("Content-Type", "application/json")
-                .baseUri(baseURI)
-                .log()
-                .all()
-                .body(PostTokenBody.tokenBody())
-                .when()
-                .post("/auth");
-
-        tokenId = response.jsonPath().getString("token");
-    }
-
-    @Test
     public static void updateBooking () {
         Response response = given()
                 .header("Content-Type", "application/json")
@@ -87,6 +91,34 @@ public class ApiTest {
                 .put("/booking/"+bookingId);
     }
 
+    @DataProvider(name = "dataProvider")
+    public Object[][] dataProvider(){
+        return new Object[][]{
+                {2,200},
+                {4,200}
+        };
+    }
+
+    @Test (dataProvider = "dataProvider")
+    public void dataProviderGetBooking(int id, int statusCode){
+
+        String response = given()
+                .header("Content-Type","application/json")
+                .baseUri(baseURI)
+                .log()
+                .all()
+                .when()
+                .get("/booking/"+id)
+                .then()
+                .statusCode(statusCode)
+                .log()
+                .all()
+                .extract().response().asString();
+
+        System.out.println(response);
+    }
+
+    @AfterClass
     @Test
     public static void deleteBooking () {
         Response response = given()
