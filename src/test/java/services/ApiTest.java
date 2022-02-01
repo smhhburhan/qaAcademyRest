@@ -4,8 +4,11 @@ import body.PartialUpdateBookingBody;
 import body.PostBookingBody;
 import body.PostTokenBody;
 import body.UpdateBookingBody;
+import io.qameta.allure.Allure;
 import io.restassured.RestAssured;
+import io.restassured.internal.RequestSpecificationImpl;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -14,18 +17,31 @@ import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.given;
 
-public class ApiTest {
+public class ApiTest<baseURL> {
 
-    static String baseURI="https://restful-booker.herokuapp.com";
+    static String baseURL="https://restful-booker.herokuapp.com";
     static String tokenId;
     static String bookingId;
+
+    @Test
+    public void sample () {
+        Response response = RestAssured.get("https://restful-booker.herokuapp.com/booking/");
+
+        System.out.println("getBody:" + response.asString());
+        System.out.println("getBody:" + response.getBody().asString());
+        System.out.println("getStatusCode:" + response.getStatusCode());
+        System.out.println("getContentType:" + response.getHeader("Content-Type"));
+        System.out.println("getTime" + response.getTime());
+
+        Assert.assertEquals(response.getStatusCode(),200);
+    }
 
     @BeforeClass
     @Test
     public static void createToken () {
         Response response = given()
                 .header("Content-Type", "application/json")
-                .baseUri(baseURI)
+                .baseUri(baseURL)
                 .log()
                 .all()
                 .body(PostTokenBody.tokenBody())
@@ -39,7 +55,7 @@ public class ApiTest {
     public void getAllBookings () {
         String response = given()
                 .header("Content-Type","application/json")
-                .baseUri(baseURI)
+                .baseUri(baseURL)
                 .log()
                 .all()
                 .when()
@@ -54,7 +70,7 @@ public class ApiTest {
     public static void postBooking () {
         Response response = given()
                 .header("Content-Type", "application/json")
-                .baseUri(baseURI)
+                .baseUri(baseURL)
                 .log()
                 .all()
                 .body(PostBookingBody.infoBody())
@@ -70,7 +86,7 @@ public class ApiTest {
         Response response = given()
                 .header("Content-Type", "application/json")
                 .header("Cookie","token="+tokenId+"")
-                .baseUri(baseURI)
+                .baseUri(baseURL)
                 .log()
                 .all()
                 .body(UpdateBookingBody.updatingBody())
@@ -83,7 +99,7 @@ public class ApiTest {
         Response response = given()
                 .header("Content-Type", "application/json")
                 .header("Cookie","token="+tokenId+"")
-                .baseUri(baseURI)
+                .baseUri(baseURL)
                 .log()
                 .all()
                 .body(PartialUpdateBookingBody.partiallyUpdatingBody())
@@ -100,15 +116,15 @@ public class ApiTest {
     }
 
     @Test (dataProvider = "dataProvider")
-    public void dataProviderGetBooking(int id, int statusCode){
+    public void dataProviderGetBooking(int id,int statusCode){
 
         String response = given()
                 .header("Content-Type","application/json")
-                .baseUri(baseURI)
+                .baseUri(baseURL)
                 .log()
                 .all()
                 .when()
-                .get("/booking/"+id)
+                .get("/booking/" + id)
                 .then()
                 .statusCode(statusCode)
                 .log()
@@ -124,7 +140,7 @@ public class ApiTest {
         Response response = given()
                 .header("Content-Type", "application/json")
                 .header("Cookie","token="+tokenId+"")
-                .baseUri(baseURI)
+                .baseUri(baseURL)
                 .log()
                 .all()
                 .body(PostTokenBody.tokenBody())
@@ -133,15 +149,24 @@ public class ApiTest {
     }
 
     @Test
-    public void sample () {
-        Response response = RestAssured.get("https://restful-booker.herokuapp.com/booking/");
+    public void report(){
+        RequestSpecification restAssuredReq = RestAssured.given()
+                .header("Study","Test")
+                .log()
+                .all(true);
+        Response response = restAssuredReq.get(baseURL);
+        attachment(restAssuredReq, baseURL, response);
+        Assert.assertEquals(response.getStatusCode(), 200);
 
-        System.out.println("getBody:" + response.asString());
-        System.out.println("getBody:" + response.getBody().asString());
-        System.out.println("getStatusCode:" + response.getStatusCode());
-        System.out.println("getContentType:" + response.getHeader("Content-Type"));
-        System.out.println("getTime" + response.getTime());
+    }
 
-        Assert.assertEquals(response.getStatusCode(),200);
+    public String attachment(RequestSpecification httpRequest, String baseURL, Response response) {
+        String html = "Url = " + ApiTest.baseURL + "\n \n" +
+                "Request Headers = " + ((RequestSpecificationImpl) httpRequest).getHeaders() + "\n \n" +
+                "Request Body = " + ((RequestSpecificationImpl) httpRequest).getBody() + "\n \n" +
+                "Response Body = " + response.getBody().asString();
+
+        Allure.addAttachment("Request Detail", html);
+        return html;
     }
 }
